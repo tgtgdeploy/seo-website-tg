@@ -1,5 +1,5 @@
-import { prisma } from '@repo/database'
-import { generateSitemap } from '@repo/seo-tools'
+import { prisma } from '@/lib/database'
+import { generateSitemap } from '@/lib/sitemap'
 import { NextRequest } from 'next/server'
 
 export async function GET(request: NextRequest) {

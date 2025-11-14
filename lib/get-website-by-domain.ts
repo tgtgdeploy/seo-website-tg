@@ -12,7 +12,7 @@
  * - Admin端统一管理所有域名和网站的关系
  */
 
-import { prisma } from '@repo/database'
+import { prisma } from '@/lib/database'
 import { headers } from 'next/headers'
 import type { Website, DomainAlias } from '@prisma/client'
 

@@ -1,4 +1,4 @@
-import { prisma } from '@repo/database'
+import { prisma } from '@/lib/database'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import Hero from '@/components/Hero'

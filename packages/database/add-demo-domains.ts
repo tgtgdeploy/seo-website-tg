@@ -23,26 +23,34 @@ async function main() {
   const domains = [
     {
       domain: 'tg-chinese.com',
+      siteName: 'TG中文纸飞机',
+      siteDescription: 'Telegram中文版官方下载与使用教程',
       isPrimary: true,
-      primaryTag: 'telegram',
+      primaryTags: ['telegram'],
       secondaryTags: ['download', 'tutorial', 'guide', 'app']
     },
     {
       domain: 'telegram-download.com',
+      siteName: 'Telegram下载',
+      siteDescription: 'Telegram官方下载渠道与安装指南',
       isPrimary: false,
-      primaryTag: 'download',
+      primaryTags: ['download'],
       secondaryTags: ['telegram', 'install', 'app']
     },
     {
       domain: 'telegram-tutorial.com',
+      siteName: 'Telegram教程',
+      siteDescription: 'Telegram使用教程与操作指南',
       isPrimary: false,
-      primaryTag: 'tutorial',
+      primaryTags: ['tutorial'],
       secondaryTags: ['telegram', 'guide', 'howto']
     },
     {
       domain: 'telegram-features.com',
+      siteName: 'Telegram功能',
+      siteDescription: 'Telegram功能介绍与使用技巧',
       isPrimary: false,
-      primaryTag: 'features',
+      primaryTags: ['features'],
       secondaryTags: ['telegram', 'app', 'function']
     }
   ]
@@ -66,8 +74,10 @@ async function main() {
       const created = await prisma.domainAlias.create({
         data: {
           domain: domainData.domain,
+          siteName: domainData.siteName,
+          siteDescription: domainData.siteDescription,
           isPrimary: domainData.isPrimary,
-          primaryTag: domainData.primaryTag,
+          primaryTags: domainData.primaryTags,
           secondaryTags: domainData.secondaryTags,
           websiteId: tgWebsite.id
         }
@@ -75,7 +85,7 @@ async function main() {
 
       console.log(`✅ 已添加: ${created.domain}`)
       console.log(`   ${created.isPrimary ? '🔵 主域名' : '⚪ 副域名'}`)
-      console.log(`   主标签: ${created.primaryTag}`)
+      console.log(`   主标签: ${created.primaryTags.join(', ')}`)
       console.log(`   副标签: ${created.secondaryTags.join(', ')}\n`)
     } catch (error) {
       console.error(`❌ 添加失败: ${domainData.domain}`, error)

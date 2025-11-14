@@ -1,11 +1,11 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { headers } from 'next/headers'
-import { prisma } from '@repo/database'
+import { prisma } from '@/lib/database'
 import {
   getDomainConfigFromList,
   calculateTagMatchScoreFromDB,
-} from '@repo/shared'
+} from '@/lib/domain-utils'
 
 interface BlogPost {
   id: string
