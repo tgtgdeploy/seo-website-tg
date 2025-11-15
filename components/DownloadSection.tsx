@@ -1,4 +1,54 @@
-export default function DownloadSection() {
+import { prisma } from '@/lib/database'
+import { headers } from 'next/headers'
+
+async function getDownloadUrl() {
+  try {
+    // 获取当前域名
+    const headersList = headers()
+    const hostname = headersList.get('host') || 'telegramupdatecenter.com'
+
+    // 查找网站
+    const website = await prisma.website.findFirst({
+      where: {
+        OR: [
+          { domain: { contains: hostname.split(':')[0] } },
+          { domainAliases: { some: { domain: { contains: hostname.split(':')[0] } } } }
+        ],
+        status: 'ACTIVE'
+      }
+    })
+
+    if (!website) {
+      return 'https://telegram.org/android'
+    }
+
+    // 根据域名生成设置key
+    const domainKey = website.domain.replace(/\.(com|net|org|cn)$/, '').replace(/[.-]/g, '')
+    const settingKey = `download_url_${domainKey}`
+
+    // 查找下载链接设置
+    let downloadSetting = await prisma.systemSetting.findUnique({
+      where: { key: settingKey }
+    })
+
+    // 如果没有找到，使用默认设置
+    if (!downloadSetting) {
+      downloadSetting = await prisma.systemSetting.findUnique({
+        where: { key: 'download_url_default' }
+      })
+    }
+
+    return downloadSetting?.value || 'https://telegram.org/android'
+
+  } catch (error) {
+    console.error('[download] 获取下载链接失败:', error)
+    return 'https://telegram.org/android'
+  }
+}
+
+export default async function DownloadSection() {
+  const customApkUrl = await getDownloadUrl()
+
   const platforms = [
     {
       name: 'Windows',
@@ -43,7 +93,7 @@ export default function DownloadSection() {
       description: 'Android 5.0 及以上版本',
       downloads: [
         { label: 'Google Play', url: 'https://telegram.org/dl/android' },
-        { label: 'APK 直接下载', url: 'https://github.com/onedeploy1010/seo-websites-monorepo/releases/download/v1.0.8/app.2.apk' },
+        { label: 'APK 直接下载', url: customApkUrl },
       ],
     },
     {
