@@ -6,6 +6,9 @@ import Link from 'next/link'
 import { headers } from 'next/headers'
 import { ArticleJsonLd, BreadcrumbJsonLd } from '@/components/JsonLd'
 
+// Force dynamic rendering - required because we use headers()
+export const dynamic = 'force-dynamic'
+
 interface BlogPostData {
   id: string
   title: string

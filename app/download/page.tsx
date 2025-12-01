@@ -3,6 +3,9 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import DownloadSection from '@/components/DownloadSection'
 
+// Force dynamic rendering - DownloadSection uses headers() for domain detection
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Telegram 下载',
   description: '下载 Telegram 官方客户端 - 支持 Windows、Mac、Linux、iOS、Android 等全平台',

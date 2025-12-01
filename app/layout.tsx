@@ -4,6 +4,9 @@ import JsonLd from '@/components/JsonLd'
 import { getDomainSEOMetadata, getWebsiteByDomain } from '@/lib/get-website-by-domain'
 import { headers } from 'next/headers'
 
+// Force dynamic rendering - required because we use headers()
+export const dynamic = 'force-dynamic'
+
 // 获取当前域名的基础URL
 async function getSiteUrl(): Promise<string> {
   const headersList = await headers()
