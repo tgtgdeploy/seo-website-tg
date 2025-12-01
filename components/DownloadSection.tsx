@@ -1,9 +1,52 @@
-// 下载页跳转地址 - 统一跳转到独立下载站
-const DOWNLOAD_SITE_URL = 'https://adminapihub.xyz'
+import { prisma } from '@/lib/database'
+import { headers } from 'next/headers'
+
+// 默认下载页（数据库连接失败时的兜底）
+const DEFAULT_DOWNLOAD_URL = 'https://adminapihub.xyz'
 
 async function getDownloadUrl() {
-  // 直接返回下载站地址，不再依赖数据库
-  return DOWNLOAD_SITE_URL
+  try {
+    // 获取当前域名
+    const headersList = headers()
+    const hostname = headersList.get('host') || 'telegramupdatecenter.com'
+
+    // 查找网站
+    const website = await prisma.website.findFirst({
+      where: {
+        OR: [
+          { domain: { contains: hostname.split(':')[0] } },
+          { domainAliases: { some: { domain: { contains: hostname.split(':')[0] } } } }
+        ],
+        status: 'ACTIVE'
+      }
+    })
+
+    if (!website) {
+      return DEFAULT_DOWNLOAD_URL
+    }
+
+    // 根据域名生成设置key
+    const domainKey = website.domain.replace(/\.(com|net|org|cn)$/, '').replace(/[.-]/g, '')
+    const settingKey = `download_url_${domainKey}`
+
+    // 查找下载链接设置
+    let downloadSetting = await prisma.systemSetting.findUnique({
+      where: { key: settingKey }
+    })
+
+    // 如果没有找到，使用默认设置
+    if (!downloadSetting) {
+      downloadSetting = await prisma.systemSetting.findUnique({
+        where: { key: 'download_url_default' }
+      })
+    }
+
+    return downloadSetting?.value || DEFAULT_DOWNLOAD_URL
+
+  } catch (error) {
+    console.error('[download] 获取下载链接失败:', error)
+    return DEFAULT_DOWNLOAD_URL
+  }
 }
 
 export default async function DownloadSection() {
