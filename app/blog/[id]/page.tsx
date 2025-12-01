@@ -3,6 +3,8 @@ import { prisma } from '@/lib/database'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
+import { headers } from 'next/headers'
+import { ArticleJsonLd, BreadcrumbJsonLd } from '@/components/JsonLd'
 
 interface BlogPostData {
   id: string
@@ -207,26 +209,79 @@ Telegram中文版为中文用户提供了一个安全、高效、功能强大的
   }
 }
 
+// 获取当前域名
+async function getSiteUrl(): Promise<string> {
+  const headersList = await headers()
+  const host = headersList.get('host') || 'www.telegramtgm.com'
+  const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http'
+  return `${protocol}://${host}`
+}
+
 export async function generateMetadata(
   { params }: { params: { id: string } }
 ): Promise<Metadata> {
   const dbPost = await getPost(params.id)
+  const siteUrl = await getSiteUrl()
+
   const post = dbPost
     ? {
-        title: dbPost.title,
-        content: dbPost.content,
+        title: dbPost.metaTitle || dbPost.title,
+        description: dbPost.metaDescription || dbPost.content.substring(0, 160).replace(/[#*\n]/g, ''),
+        keywords: dbPost.metaKeywords || [],
+        image: dbPost.coverImage,
+        createdAt: dbPost.createdAt,
+        updatedAt: dbPost.updatedAt,
       }
-    : blogPosts[params.id] || blogPosts['1']
+    : {
+        title: blogPosts[params.id]?.title || blogPosts['1'].title,
+        description: blogPosts[params.id]?.content.substring(0, 160) || '',
+        keywords: [],
+        image: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+
+  const canonicalUrl = `${siteUrl}/blog/${params.id}`
 
   return {
-    title: `${post.title} - Telegram中文版博客`,
-    description: post.content.substring(0, 160),
+    title: post.title,
+    description: post.description,
+    keywords: post.keywords,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      type: 'article',
+      title: post.title,
+      description: post.description,
+      url: canonicalUrl,
+      siteName: 'Telegram中文官网',
+      images: [
+        {
+          url: post.image || `${siteUrl}/og-image.png`,
+          width: 1200,
+          height: 630,
+          alt: post.title,
+        },
+      ],
+      publishedTime: post.createdAt.toISOString(),
+      modifiedTime: post.updatedAt.toISOString(),
+      authors: ['Telegram Team'],
+      locale: 'zh_CN',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.description,
+      images: [post.image || `${siteUrl}/og-image.png`],
+    },
   }
 }
 
 export default async function BlogPost({ params }: { params: { id: string } }) {
   const dbPost = await getPost(params.id)
   const dbRelatedPosts = await getRelatedPosts(params.id)
+  const siteUrl = await getSiteUrl()
 
   // 使用数据库文章或fallback到硬编码数据
   const post = dbPost
@@ -234,12 +289,22 @@ export default async function BlogPost({ params }: { params: { id: string } }) {
         id: dbPost.id,
         title: dbPost.title,
         content: dbPost.content,
+        description: dbPost.metaDescription || dbPost.content.substring(0, 160),
         date: new Date(dbPost.createdAt).toLocaleDateString('zh-CN'),
-        category: '教程',
+        dateISO: dbPost.createdAt.toISOString(),
+        updatedISO: dbPost.updatedAt.toISOString(),
+        category: dbPost.category || '教程',
         author: 'Telegram Team',
-        readTime: '5分钟',
+        readTime: `${Math.ceil(dbPost.content.length / 500)}分钟`,
+        image: dbPost.coverImage,
       }
-    : blogPosts[params.id] || blogPosts['1']
+    : {
+        ...blogPosts[params.id] || blogPosts['1'],
+        description: (blogPosts[params.id] || blogPosts['1']).content.substring(0, 160),
+        dateISO: new Date().toISOString(),
+        updatedISO: new Date().toISOString(),
+        image: null,
+      }
 
   // 相关文章
   const relatedPosts = dbRelatedPosts.length > 0
@@ -256,19 +321,53 @@ export default async function BlogPost({ params }: { params: { id: string } }) {
         .filter(p => p.id !== post.id)
         .slice(0, 3)
 
+  // 面包屑数据
+  const breadcrumbItems = [
+    { name: '首页', url: siteUrl },
+    { name: '博客', url: `${siteUrl}/blog` },
+    { name: post.title, url: `${siteUrl}/blog/${params.id}` },
+  ]
+
   return (
     <main className="min-h-screen">
+      {/* 结构化数据 */}
+      <ArticleJsonLd
+        title={post.title}
+        description={post.description}
+        url={`${siteUrl}/blog/${params.id}`}
+        imageUrl={post.image || undefined}
+        datePublished={post.dateISO}
+        dateModified={post.updatedISO}
+        authorName={post.author}
+      />
+      <BreadcrumbJsonLd items={breadcrumbItems} />
+
       <Header />
 
       {/* 面包屑导航 */}
       <div className="pt-24 pb-8 bg-gray-50">
         <div className="container mx-auto px-4">
-          <nav className="text-sm text-gray-600">
-            <Link href="/" className="hover:text-telegram-blue">首页</Link>
-            <span className="mx-2">/</span>
-            <Link href="/blog" className="hover:text-telegram-blue">博客</Link>
-            <span className="mx-2">/</span>
-            <span className="text-gray-900">{post.title}</span>
+          <nav className="text-sm text-gray-600" aria-label="Breadcrumb">
+            <ol className="flex items-center" itemScope itemType="https://schema.org/BreadcrumbList">
+              <li itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
+                <Link href="/" className="hover:text-telegram-blue" itemProp="item">
+                  <span itemProp="name">首页</span>
+                </Link>
+                <meta itemProp="position" content="1" />
+              </li>
+              <span className="mx-2">/</span>
+              <li itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
+                <Link href="/blog" className="hover:text-telegram-blue" itemProp="item">
+                  <span itemProp="name">博客</span>
+                </Link>
+                <meta itemProp="position" content="2" />
+              </li>
+              <span className="mx-2">/</span>
+              <li itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
+                <span className="text-gray-900" itemProp="name">{post.title}</span>
+                <meta itemProp="position" content="3" />
+              </li>
+            </ol>
           </nav>
         </div>
       </div>
