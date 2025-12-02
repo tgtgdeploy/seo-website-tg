@@ -1,32 +1,9 @@
-import type { Metadata } from 'next'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
-import DownloadSection from '@/components/DownloadSection'
+import { redirect } from 'next/navigation'
 
-// Force dynamic rendering - DownloadSection uses headers() for domain detection
-export const dynamic = 'force-dynamic'
-
-export const metadata: Metadata = {
-  title: 'Telegram 下载',
-  description: '下载 Telegram 官方客户端 - 支持 Windows、Mac、Linux、iOS、Android 等全平台',
-}
+// 下载页面 - 跳转到独立下载站点
+// 主站保持纯净，所有下载链接指向 adminapihub.xyz
+const DOWNLOAD_SITE = 'https://adminapihub.xyz'
 
 export default function DownloadPage() {
-  return (
-    <main className="min-h-screen">
-      <Header />
-      <div className="pt-24 pb-20 bg-gradient-to-br from-telegram-light to-telegram-blue">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center text-white">
-            <h1 className="text-5xl font-bold mb-4">下载 Telegram</h1>
-            <p className="text-xl opacity-90">
-              全平台支持，随时随地保持连接
-            </p>
-          </div>
-        </div>
-      </div>
-      <DownloadSection />
-      <Footer />
-    </main>
-  )
+  redirect(DOWNLOAD_SITE)
 }
