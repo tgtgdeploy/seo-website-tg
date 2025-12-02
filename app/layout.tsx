@@ -84,7 +84,7 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
@@ -93,7 +93,7 @@ export default function RootLayout({
     <html lang="zh-CN">
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/logo.svg" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/logo.png" />
         <link rel="manifest" href="/site.webmanifest" />
         <JsonLd />
       </head>
